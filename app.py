@@ -7,75 +7,117 @@ Original file is located at
     https://colab.research.google.com/drive/1JU3ShbBDnOcfoX8MsLZzEYcH1wGC1Atw
 """
 
-#import the libraries
+# -*- coding: utf-8 -*-
+"""app.py - Streamlit Optimized Version"""
+
+# Import the necessary libraries
+import streamlit as st # 🔑 NEW: Import Streamlit
 from matplotlib import pyplot
 from pandas import read_csv
 from pandas import set_option
-import numpy # Added for numpy.arange used in a later cell
+import numpy 
+import pandas as pd # Import pandas for creating tables for display
+from sklearn.model_selection import KFold
+from sklearn.model_selection import cross_val_score
+from sklearn.linear_model import LogisticRegression
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.svm import SVC
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+from sklearn.model_selection import GridSearchCV
+from numpy import set_printoptions
+from pickle import dump
+from pickle import load
 
-# #### Load the data
-# Load CSV using Pandas
-filename = 'pima-indians-diabetes.csv'
-names = ['preg', 'plas', 'pres', 'skin', 'test', 'mass', 'pedi', 'age', 'class']
-data = read_csv(filename, names=names)
-print(data.shape)
 
-# #### Desrciptive Stats
+# Set the title for the Streamlit app
+st.title("Diabetic Prediction Model Analysis (Pima Indians)")
+st.write("This app runs a machine learning pipeline for diabetic prediction.")
 
-filename = "pima-indians-diabetes.csv"
-names = ['preg', 'plas', 'pres', 'skin', 'test', 'mass', 'pedi', 'age', 'class']
-data = read_csv(filename, names=names)
+# --- Load the data ---
+st.header("1. Data Loading and Shape")
+try:
+    # Load CSV using Pandas. Assumes the file 'pima-indians-diabetes.csv' 
+    # is available in the deployment folder.
+    filename = 'pima-indians-diabetes.csv'
+    names = ['preg', 'plas', 'pres', 'skin', 'test', 'mass', 'pedi', 'age', 'class']
+    data = read_csv(filename, names=names)
+    st.write("Data loaded successfully.")
+    st.write("Data Shape:", data.shape) # 🔑 Replaced print() with st.write()
+except FileNotFoundError:
+    st.error(f"Error: The data file '{filename}' was not found. Ensure it is deployed with the app.")
+    st.stop() # Stop execution if data is missing
+
+# ----------------------------------------------------------------------------------------------------
+
+# --- Descriptive Stats ---
+st.header("2. Descriptive Statistics")
 
 # Data Types for Each Attribute
 types = data.dtypes
-print(types)
+st.subheader("Data Types")
+st.write(types) # 🔑 Replaced print() with st.write()
 
 # Statistical Summary
-data.describe()
-# set_option('precision', 3)
-
-# description = data.describe()
-# print(description)
+st.subheader("Statistical Summary")
+st.dataframe(data.describe()) # 🔑 Using st.dataframe() for better display
 
 # Pairwise Pearson correlations
 correlations = data.corr(method='pearson')
-print(correlations)
+st.subheader("Pairwise Pearson Correlations")
+st.dataframe(correlations) # 🔑 Using st.dataframe()
 
 # Class proportion
 class_counts = data.groupby('class').size()
-print(class_counts)
+st.subheader("Class Proportion")
+st.write(class_counts) # 🔑 Replaced print() with st.write()
 
-# #### Data Visualization
+# ----------------------------------------------------------------------------------------------------
+
+# --- Data Visualization ---
+st.header("3. Data Visualization")
+
 # Histograms
-data.hist()
-pyplot.show()
+st.subheader("Histograms")
+fig_hist = pyplot.figure()
+data.hist(ax=fig_hist.subplots(3, 3).flatten())
+pyplot.close(fig_hist)
+st.pyplot(fig_hist) # 🔑 Use st.pyplot()
 
 # Density Plots
-data.plot(kind='density', subplots=True, layout=(3,3), sharex=False)
-pyplot.show()
+st.subheader("Density Plots")
+fig_density = pyplot.figure()
+data.plot(kind='density', subplots=True, layout=(3,3), sharex=False, ax=fig_density.subplots(3, 3).flatten())
+pyplot.close(fig_density) 
+st.pyplot(fig_density) # 🔑 Use st.pyplot()
 
 # Box and Whisker Plots
-data.plot(kind='box', subplots=True, layout=(3,3), sharex=False, sharey=False)
-pyplot.show()
+st.subheader("Box and Whisker Plots")
+fig_box = pyplot.figure()
+data.plot(kind='box', subplots=True, layout=(3,3), sharex=False, sharey=False, ax=fig_box.subplots(3, 3).flatten())
+pyplot.close(fig_box) 
+st.pyplot(fig_box) # 🔑 Use st.pyplot()
 
 # Correction Matrix Plot
-fig = pyplot.figure()
-ax = fig.add_subplot(111)
+st.subheader("Correction Matrix Plot")
+fig_corr = pyplot.figure()
+ax = fig_corr.add_subplot(111)
 cax = ax.matshow(correlations, vmin=-1, vmax=1)
-fig.colorbar(cax)
+fig_corr.colorbar(cax)
 ticks = numpy.arange(0,9,1)
 ax.set_xticks(ticks)
 ax.set_yticks(ticks)
 ax.set_xticklabels(names)
 ax.set_yticklabels(names)
-pyplot.show()
+st.pyplot(fig_corr) # 🔑 Use st.pyplot()
 
-from numpy import set_printoptions
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
+# ----------------------------------------------------------------------------------------------------
 
-# #### Data Preprocessing
+# --- Data Preprocessing ---
+st.header("4. Data Preprocessing (Standardization)")
 # Separate array into input and output components
 array = data.values
 X = array[:,0:8]
@@ -85,16 +127,13 @@ scaler = StandardScaler().fit(X)
 rescaledX = scaler.transform(X)
 # summarize transformed data
 set_printoptions(precision=3)
-print(rescaledX[:5,:])
+st.write("Standardized Data (First 5 rows):") # 🔑 Replaced print()
+st.code(str(rescaledX[:5,:])) # 🔑 Use st.code() for array output
 
-# #### Algorithm Evaluation
-from sklearn.model_selection import KFold
-from sklearn.model_selection import cross_val_score
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.naive_bayes import GaussianNB
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.svm import SVC
+# ----------------------------------------------------------------------------------------------------
+
+# --- Algorithm Evaluation ---
+st.header("5. Algorithm Evaluation (10-Fold Cross-Validation)")
 
 # Test options and evaluation metric
 num_folds = 10
@@ -113,33 +152,43 @@ models.append(('SVM', SVC()))
 # Evaluate each model in turn
 results = []
 names = []
+performance_data = [] # List to store results for a DataFrame
+
 for name, model in models:
     kfold = KFold(n_splits=num_folds, random_state=seed, shuffle=True)
     cv_results = cross_val_score(model, rescaledX, Y, cv=kfold, scoring=scoring)
     results.append(cv_results)
     names.append(name)
-    msg = "%s: %f (%f)" % (name, cv_results.mean(), cv_results.std())
-    print(msg)
+    mean_score = cv_results.mean()
+    std_score = cv_results.std()
+    
+    # 🔑 Capturing output for display
+    performance_data.append({
+        'Model': name,
+        'Mean Accuracy': f"{mean_score:f}",
+        'Std Dev': f"({std_score:f})"
+    })
+
+# Display algorithm performance
+st.subheader("Model Performance Summary")
+st.dataframe(pd.DataFrame(performance_data).set_index('Model'))
 
 # Compare Algorithms
-fig = pyplot.figure()
-fig.suptitle('Algorithm Comparison')
-ax = fig.add_subplot(111)
-pyplot.boxplot(results)
-ax.set_xticklabels(names)
-pyplot.show()
+st.subheader("Algorithm Comparison (Box Plot)")
+fig_comp = pyplot.figure()
+fig_comp.suptitle('Algorithm Comparison')
+ax = fig_comp.add_subplot(111)
+pyplot.boxplot(results, labels=names) # Added labels here
+# ax.set_xticklabels(names) # Removed as labels is in boxplot call
+st.pyplot(fig_comp) # 🔑 Use st.pyplot()
 
-# #### Algorithm Tuning
-from sklearn.model_selection import GridSearchCV
-from sklearn.model_selection import RandomizedSearchCV
+# ----------------------------------------------------------------------------------------------------
+
+# --- Algorithm Tuning ---
+st.header("6. Algorithm Tuning (Grid Search on SVM)")
 
 # Grid Search on SVM
-array = data.values
-X = array[:,0:8]
-Y = array[:,8]
-scaler = StandardScaler().fit(X)
-rescaledX = scaler.transform(X)
-seed = 7
+# (Code remains the same for computation)
 C_values = [0.1, 0.3, 0.5, 0.7, 0.9, 1.0, 1.3, 1.5, 1.7, 2.0]
 kernel_values = ['linear', 'poly', 'rbf', 'sigmoid']
 param_grid = dict(C=C_values, kernel=kernel_values)
@@ -147,17 +196,27 @@ model = SVC()
 kfold = KFold(n_splits=num_folds, random_state=seed, shuffle=True)
 grid = GridSearchCV(estimator=model, param_grid=param_grid, scoring=scoring, cv=kfold)
 grid_result = grid.fit(rescaledX, Y)
-print("Best: %f using %s" % (grid_result.best_score_, grid_result.best_params_))
+
+# 🔑 Replaced print() with st.write()
+st.subheader("Best Parameters Found")
+st.write("Best Score: **%f** using parameters: `%s`" % (grid_result.best_score_, grid_result.best_params_))
+
+# 🔑 Display all results in a table
 means = grid_result.cv_results_['mean_test_score']
 stds = grid_result.cv_results_['std_test_score']
 params = grid_result.cv_results_['params']
-for mean, stdev, param in zip(means, stds, params):
-    print("%f (%f) with: %r" % (mean, stdev, param))
+grid_results_df = pd.DataFrame({
+    'Mean Score': [f"{m:f}" for m in means],
+    'Std Dev': [f"({s:f})" for s in stds],
+    'Parameters': [str(p) for p in params]
+})
+st.subheader("Detailed Grid Search Results")
+st.dataframe(grid_results_df)
 
-# #### Finalize Model
-from numpy import loadtxt
-from pickle import dump
-from pickle import load
+# ----------------------------------------------------------------------------------------------------
+
+# --- Finalize Model ---
+st.header("7. Finalize and Save Model")
 
 # Split array into input and output
 X = array[:,0:8]
@@ -168,13 +227,23 @@ model = LogisticRegression(max_iter=200)
 model.fit(X_train, Y_train)
 
 # save the model to disk
-filename = 'finalized_model.sav'
-dump(model, open('filename', 'wb'))
+filename_save = 'finalized_model.sav'
+try:
+    # 💡 Corrected the file name usage for saving
+    dump(model, open(filename_save, 'wb')) 
+    st.success(f"Model saved to disk as '{filename_save}'")
+except Exception as e:
+    st.warning(f"Could not save model to disk. Error: {e}")
 
-# some time later...
-
-# load the model from disk
-loaded_model = load(open('filename', 'rb'))
-result = loaded_model.score(X_test, Y_test)
-print(result)
-
+# Load the model and check score
+st.subheader("Model Loading and Test Score")
+try:
+    # 💡 Corrected the file name usage for loading
+    loaded_model = load(open(filename_save, 'rb'))
+    result = loaded_model.score(X_test, Y_test)
+    st.write(f"Test Accuracy: **{result:.3f}**") # 🔑 Replaced print() with st.write()
+except FileNotFoundError:
+    st.warning(f"Could not load the model from disk (file not found).")
+    
+# Clean up Matplotlib figures
+pyplot.close('all')
