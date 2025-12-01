@@ -59,21 +59,22 @@ st.header("2. Descriptive Statistics")
 # Data Types for Each Attribute
 types = data.dtypes
 st.subheader("Data Types")
-st.write(types) # 🔑 Replaced print() with st.write()
+# 💡 Change: Convert Pandas Series to DataFrame for robust rendering
+st.dataframe(pd.DataFrame(types, columns=['Data Type'])) 
 
 # Statistical Summary
 st.subheader("Statistical Summary")
-st.dataframe(data.describe()) # 🔑 Using st.dataframe() for better display
+st.dataframe(data.describe())
 
 # Pairwise Pearson correlations
 correlations = data.corr(method='pearson')
 st.subheader("Pairwise Pearson Correlations")
-st.dataframe(correlations) # 🔑 Using st.dataframe()
+st.dataframe(correlations)
 
 # Class proportion
 class_counts = data.groupby('class').size()
 st.subheader("Class Proportion")
-st.write(class_counts) # 🔑 Replaced print() with st.write()
+st.write(class_counts)
 
 # ----------------------------------------------------------------------------------------------------
 
@@ -82,27 +83,29 @@ st.header("3. Data Visualization")
 
 # Histograms
 st.subheader("Histograms")
-fig_hist = pyplot.figure()
-data.hist(ax=fig_hist.subplots(3, 3).flatten())
-pyplot.close(fig_hist)
-st.pyplot(fig_hist) # 🔑 Use st.pyplot()
+# 💡 Correction: Use subplots to manage figure and axes, display before closing
+fig_hist, axes = pyplot.subplots(3, 3, figsize=(10, 8))
+data.hist(ax=axes.flatten())
+st.pyplot(fig_hist) 
+pyplot.close(fig_hist) # Close the figure ONLY after displaying
 
 # Density Plots
 st.subheader("Density Plots")
-fig_density = pyplot.figure()
-data.plot(kind='density', subplots=True, layout=(3,3), sharex=False, ax=fig_density.subplots(3, 3).flatten())
-pyplot.close(fig_density) 
-st.pyplot(fig_density) # 🔑 Use st.pyplot()
+fig_density, axes = pyplot.subplots(3, 3, figsize=(10, 8))
+data.plot(kind='density', subplots=True, layout=(3,3), sharex=False, ax=axes.flatten())
+st.pyplot(fig_density) 
+pyplot.close(fig_density) 
 
 # Box and Whisker Plots
 st.subheader("Box and Whisker Plots")
-fig_box = pyplot.figure()
-data.plot(kind='box', subplots=True, layout=(3,3), sharex=False, sharey=False, ax=fig_box.subplots(3, 3).flatten())
-pyplot.close(fig_box) 
-st.pyplot(fig_box) # 🔑 Use st.pyplot()
+fig_box, axes = pyplot.subplots(3, 3, figsize=(10, 8))
+data.plot(kind='box', subplots=True, layout=(3,3), sharex=False, sharey=False, ax=axes.flatten())
+st.pyplot(fig_box) 
+pyplot.close(fig_box) 
 
 # Correction Matrix Plot
 st.subheader("Correction Matrix Plot")
+# This plot was mostly fine, just ensuring correct order
 fig_corr = pyplot.figure()
 ax = fig_corr.add_subplot(111)
 cax = ax.matshow(correlations, vmin=-1, vmax=1)
@@ -112,7 +115,8 @@ ax.set_xticks(ticks)
 ax.set_yticks(ticks)
 ax.set_xticklabels(names)
 ax.set_yticklabels(names)
-st.pyplot(fig_corr) # 🔑 Use st.pyplot()
+st.pyplot(fig_corr) 
+pyplot.close(fig_corr) # Close the figure ONLY after displaying
 
 # ----------------------------------------------------------------------------------------------------
 
